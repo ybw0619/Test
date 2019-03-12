@@ -1,20 +1,15 @@
 <template>
-  <q-page style="width: 100%; max-width: 1000px">
-    <div class="row justify-center">
-      <q-list separator class="q-md col-8">
-        <q-item v-for="board in boards" v-ripple :key="board">
-          <q-item-section>
-            <q-item-label>{{board.title}}</q-item-label>
-            <q-item-label caption lines="3">{{board.content}}</q-item-label>
-          </q-item-section>
-          <q-item-section side top>
-            <q-item-label caption>{{date.formatDate(new Date(board.date), 'YYYY-MM-DD')}}</q-item-label>
-          </q-item-section>
-        </q-item>
-      </q-list>
+    <div>
+      <div class="movies">
+        영화 목록
+        <div v-for="movie in movies" :key="movie.id" class="movie">
+          <img v-bind:src="movie.poster" class="poster">
+          <div>
+            <strong>{{movie.name}}</strong>
+          </div>
+        </div>
+      </div>
     </div>
-    <div></div>
-  </q-page>
 </template>
 
 <style>
@@ -27,13 +22,13 @@ export default {
   data() {
     return {
       date: date,
-      boards: []
+      movies: []
     };
   },
   created() {
-    this.$axios.get("/api/boards").then(res => {
-      this.boards = res.data;
-      console.log(this.boards);
+    this.$axios.get("/api/movies").then(res => {
+      this.movies = res.data;
+      console.log(this.movies);
     });
   }
 };

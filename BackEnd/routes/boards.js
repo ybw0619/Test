@@ -3,50 +3,52 @@ var router = express.Router();
 var Board = require('../models/board')
 router.post('/', function(req, res){
   console.log(req.body);
-    var board = new Board();
-    board.title = req.body.title;
-    board.writer = req.body.writer;
-    board.content = req.body.content;
-
-    board.save(function(err){
-        if(err){
-            console.error(err);
-            res.json({result: 0});
-            return;
-        }
-
-        res.json({result: board});
-
-    });
-});
-
-router.get('/', function(req,res){
-    Board.find(function(err, boards){
-        if(err) return res.status(500).send({error: 'database failure'});
-        res.json(boards);
-    })
-});
-
-router.get('/:id', function(req, res, next) {
-  board.findById(req.params.id, function(err, board) {
-    if(err) {
-      return next(err);
+  var board = new Board();
+  board.title = req.body.title;
+  board.writer = req.body.writer;
+  board.content = req.body.content;
+  board.save(function(err){
+    if(err){
+      console.error(err);
+      res.json({result: 0});
+        return;
     }
-    res.json(board);
+    res.json({result: board});
   });
 });
 
-router.delete('/api/boards/:board_id', function(req, res){
-    board.remove({ _id: req.params.board_id }, function(err, output){
-        if(err) return res.status(500).json({ error: "database failure" });
+router.get('/', function(req,res){
+  Board.find(function(err, boards){
+    if(err) return res.status(500).send({error: 'database failure'});
+    res.json(boards);
+  })
+});
 
-        /* ( SINCE DELETE OPERATION IS IDEMPOTENT, NO NEED TO SPECIFY )
-        if(!output.result.n) return res.status(404).json({ error: "board not found" });
-        res.json({ message: "board deleted" });
-        */
+router.get('/:id', function(req, res, next) {
+  Board.findById(req.params.id, function(err, board) {
+    if(err) {
+      return next(err);
+    }
+  });
+});
 
-        res.status(204).end();
-    })
+router.put('/', function(req, res) {
+  Board.update(
+    {_id: req.body._id},
+    { $set: {'title': req.body.title, 'content' : req.body.content}}, 
+    function(err, result) {
+      if(err)  return res.status(500).send({error: 'database failure'});
+      res.json({result:1});
+    }
+  );
+}); 
+
+router.delete('/:id', function(req, res){
+  
+  Board.remove({ _id: req.params.id }, function(err, output){
+    if(err) return res.status(500).json({ error: "database failure" });
+    res.json({result: 1});
+  })
 });
 
 module.exports = router;

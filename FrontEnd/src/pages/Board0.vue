@@ -5,26 +5,31 @@
         <template v-slot:body="props">
           <q-tr :props="props">
             <q-td key="index">{{ props.row.__index + 1 }}</q-td>
-            <q-td key="title"><div class="cursor-pointer" @click="alert('a')">{{ props.row.title }}</div></q-td>
+            <q-td key="title"><div class="cursor-pointer" @click="openDialog('read',props.row);">{{ props.row.title }}</div></q-td>
             <q-td key="date">{{ date_.formatDate(new Date(props.row.date), "YYYY-MM-DD") }}</q-td>
             <q-td key="writer">{{ props.row.writer }}</q-td>
           </q-tr>
         </template>
         <template v-slot:top-right>
-          <q-btn @click="writeDialog = true">글쓰기</q-btn>
+          <q-btn @click="openDialog('write')">글쓰기</q-btn>
         </template>
       </q-table>
     </div>
 
-    <q-dialog v-model="writeDialog">
+    <q-dialog v-model="IsDialogOpen">
       <q-card style="min-width: 600px">
         <q-card-section>
-          <div class="text-h6">글쓰기 </div>
+          <div class="text-h6">{{dialogTitle}} </div>
         </q-card-section>
 
         <q-card-section >
-          <q-input v-model="board.title" label="제목" color="brand"/>
+          <q-input 
+            :readonly="readonly"
+            v-model="board.title" 
+            label="제목" color="brand"
+          />
           <q-input
+            :readonly="readonly"
             label="내용"
             v-model="board.content"
             type="textarea"
@@ -33,7 +38,11 @@
         </q-card-section>
 
         <q-card-actions align="right">
-          <q-btn flat label="저장" @click="write" color="black" v-close-dialog />
+          <q-btn flat label="수정완료" v-if="currentAct === 'update'" @click="update" color="black" v-close-dialog />
+          <q-btn flat label="수정" v-if="currentAct === 'read'" @click="currentAct='update'" color="black" />
+          <q-btn flat label="삭제" v-if="currentAct === 'read'" @click="del" color="black" v-close-dialog />
+          <q-btn flat label="저장" v-if="currentAct === 'write'" @click="write" color="black" v-close-dialog />
+          <q-btn flat label="닫기" color="black" v-close-dialog />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -50,7 +59,10 @@ export default {
   name: "PageBoard",
   data() {
     return {
-      writeDialog:false,
+      readonly:true,
+      currentAct:'',
+      IsDialogOpen:false,
+      dialogTitle:'',
       date_: date,
       board:{
         title:'',
@@ -73,17 +85,40 @@ export default {
     };
   },
   methods: {
+    openDialog(param,board){
+      this.currentAct=param
+      this.IsDialogOpen=true
+      this.board=board
+    },
+    update(){
+      this.$axios.put("/api/boards",this.board).then(res => {
+        console.log(res.data);
+      });
+    },
+    del(){
+      this.$axios.delete("/api/boards/"+this.board._id).then(res => {
+        console.log(res.data);
+        if(res.data.result!=0){
+          this.boards.splice(this.board.__index,1)
+          this.clearBoard()
+        }
+      });
+    },
     write(){
+      this.dialogTitle="글쓰기"
       this.board.writer='양호준'
       this.$axios.post("/api/boards",this.board).then(res => {
         console.log(res.data);
         if(res.data.result!=0){
           this.boards.push(res.data.result)
-          this.board.title=''
-          this.board.content=''
-          this.board.writer=''
+          this.clearBoard()
         }
       });
+    },
+    clearBoard(){
+      this.board.title=''
+      this.board.content=''
+      this.board.writer=''
     }
   },
   created() {
@@ -91,6 +126,13 @@ export default {
       this.boards = res.data;
       console.log(this.boards);
     });
-  }
+  },
+  watch: {
+      currentAct : function(){
+      if(this.currentAct=='read')   { this.dialogTitle="글보기"; this.readonly=true }
+      if(this.currentAct=='write')  { this.dialogTitle="글쓰기"; this.readonly=false }
+      if(this.currentAct=='update') { this.dialogTitle="글수정"; this.readonly=false }
+    }
+  },
 };
 </script>
